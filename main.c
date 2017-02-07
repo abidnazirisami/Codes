@@ -71,9 +71,11 @@ int execute (char ** arg, int in, int out, int background) {
         else if (pid < 0) perror("Error occured while forking"); // well, it explains itself
         else {
         // Parent process
-        do {
-          wpid = waitpid(pid, &status, WUNTRACED);
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+		if (!background) {
+			do {
+          			wpid = waitpid(pid, &status, WUNTRACED);
+        		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+		}
       }
     }
     return 1;
