@@ -3,6 +3,9 @@
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 void lifetimeLoop();
 void getArgsFromLine(int *argc, char *line, char args[100][100]);
 int execute (char ** arg, int in, int out, int background);
@@ -26,15 +29,17 @@ void executeExit() {
     exit(EXIT_SUCCESS);
 }
 void executeEcho(char **arg) {
-    for (int i=1; arg[i] != NULL; i++) printf("%s ", arg[i]);
+    int i;
+    for (i=1; arg[i] != NULL; i++) printf("%s ", arg[i]);
     printf("\n");
-    printf("That was pretty easy. Try again, ayyo, lmao\n");
 }
 void executeHelp() {
     printf("You can do anything here.\n");
     printf("I won't tell you how to do it.\n");
     printf("You have to figure it out yourself.\n");
     printf("Check www.google.com for more\n");
+    printf("List of builtin functions:\n");
+    printf("cd\npwd\nExit\nEcho\nHelp");
 }
 int execute (char ** arg, int in, int out, int background) {
     pid_t pid, wpid;
@@ -88,6 +93,7 @@ int executeIt (int argc, char args[100][100]) {
         background = 1;
     }
     for (i=0; i<argc; i++) {
+	//printf("%s\n", args[i]);
         if (args[i][0] == '|') {
             arg[cmdptr] = NULL;
             pipe(pipefd);
@@ -96,14 +102,25 @@ int executeIt (int argc, char args[100][100]) {
             close(pipefd[1]);
             cmdptr = 0;
         }
-        else if (args[i][0] == '>') {
-
-        }
         else if (args[i][0] == '<') {
-
+		in=open(args[i+1], O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);
+		arg[cmdptr]=NULL;
         }
+        else if (strcmp(args[i], ">>") == 0) {
+			out=open(args[i+1], O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);
+			arg[cmdptr]=NULL;
+			break;
+        }
+        else if (args[i][0] == '>') {
+		//printf("asfasf\n");
+		out=open(args[i+1], O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
+		arg[cmdptr]=NULL;
+		//printf("%s\n", args[i+1]);
+		break;
+        }
+
         else {
-            arg[i] = args[i];
+            arg[cmdptr] = args[i];
             cmdptr++;
         }
     }
